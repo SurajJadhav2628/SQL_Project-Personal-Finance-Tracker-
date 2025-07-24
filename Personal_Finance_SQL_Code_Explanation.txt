@@ -1,0 +1,121 @@
+
+📘 Personal Finance Tracker – Code Explanation
+
+📌 1. Creating the Database
+CREATE DATABASE FinanceTracker;
+USE FinanceTracker;
+- Creates a database named FinanceTracker and selects it.
+
+📌 2. Creating the Users Table
+CREATE TABLE Users (
+    user_id INT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(100),
+    email VARCHAR(100) UNIQUE
+);
+- Stores users with unique user_id and email.
+
+📌 3. Creating the Accounts Table
+CREATE TABLE Accounts (
+    account_id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id INT,
+    account_name VARCHAR(50),
+    balance DECIMAL(10,2),
+    FOREIGN KEY (user_id) REFERENCES Users(user_id)
+);
+- Holds accounts for each user with balance info.
+
+📌 4. Creating the Categories Table
+CREATE TABLE Categories (
+    category_id INT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(50),
+    type ENUM('Income', 'Expense')
+);
+- Stores category names and whether they are income or expense.
+
+📌 5. Creating the Transactions Table
+CREATE TABLE Transactions (
+    transaction_id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id INT,
+    account_id INT,
+    category_id INT,
+    amount DECIMAL(10,2),
+    transaction_date DATE,
+    description VARCHAR(255),
+    FOREIGN KEY (user_id) REFERENCES Users(user_id),
+    FOREIGN KEY (account_id) REFERENCES Accounts(account_id),
+    FOREIGN KEY (category_id) REFERENCES Categories(category_id)
+);
+- Tracks every transaction and links it to user, account, and category.
+
+📌 6. Inserting Sample Data
+INSERT INTO Users (name, email) VALUES ('Suraj', 'suraj@example.com');
+INSERT INTO Categories (name, type) VALUES ('Salary', 'Income'), ('Food', 'Expense');
+INSERT INTO Accounts (user_id, account_name, balance) VALUES (1, 'HDFC Bank', 10000);
+INSERT INTO Transactions (user_id, account_id, category_id, amount, transaction_date, description)
+VALUES (1, 1, 1, 50000, '2025-07-01', 'Monthly Salary');
+
+📌 7. Stored Procedure: AddTransaction
+DELIMITER //
+CREATE PROCEDURE AddTransaction(
+    IN p_user_id INT,
+    IN p_account_id INT,
+    IN p_category_id INT,
+    IN p_amount DECIMAL(10,2),
+    IN p_date DATE,
+    IN p_description VARCHAR(255)
+)
+BEGIN
+    INSERT INTO Transactions (user_id, account_id, category_id, amount, transaction_date, description)
+    VALUES (p_user_id, p_account_id, p_category_id, p_amount, p_date, p_description);
+END //
+DELIMITER ;
+- Adds a new transaction using input values.
+
+📌 8. Stored Procedure: GetMonthlyExpenses
+DELIMITER //
+CREATE PROCEDURE GetMonthlyExpenses(
+    IN p_user_id INT,
+    IN p_month VARCHAR(7)
+)
+BEGIN
+    SELECT 
+        c.name AS Category,
+        SUM(t.amount) AS Total
+    FROM Transactions t
+    JOIN Categories c ON t.category_id = c.category_id
+    WHERE 
+        t.user_id = p_user_id AND
+        c.type = 'Expense' AND
+        DATE_FORMAT(t.transaction_date, '%Y-%m') = p_month
+    GROUP BY c.name;
+END //
+DELIMITER ;
+- Shows how much was spent per category in a specific month.
+
+📌 9. Useful Queries
+-- Get all income and expenses
+SELECT t.transaction_date, c.name AS category, c.type, t.amount
+FROM Transactions t
+JOIN Categories c ON t.category_id = c.category_id
+WHERE t.user_id = 1;
+
+-- Total income vs expense
+SELECT 
+    c.type,
+    SUM(t.amount) AS Total
+FROM Transactions t
+JOIN Categories c ON t.category_id = c.category_id
+WHERE t.user_id = 1
+GROUP BY c.type;
+
+-- Account balances
+SELECT account_name, balance FROM Accounts WHERE user_id = 1;
+
+-- Update account balance
+UPDATE Accounts SET balance = balance + 1000 WHERE account_id = 1;
+
+✅ Summary
+- Database with tables for users, accounts, categories, and transactions.
+- Inserted sample data.
+- Used stored procedures for data input and reports.
+- Queried data to analyze income/expenses.
